@@ -7,9 +7,8 @@ import {
 import { forEachExecutorOptions } from '@nrwl/workspace/src/utilities/executor-options-utils';
 import { CypressExecutorOptions } from '../../executors/cypress/cypress.impl';
 import { updateProject } from './conversion.util';
-
-const TMP_CYPRESS_VERSION =
-  'https://cdn.cypress.io/beta/npm/10.0.0/circle-10.0-release-ee08f4ae95ca2c1c442c5c699395710ff1c145e6/cypress.tgz';
+import { cypressVersion } from '../../utils/versions';
+import { CypressConvertOptions } from './schema';
 
 async function normalizeOptions(options: CypressConvertOptions) {
   if (options.project && options.all) {
@@ -49,7 +48,7 @@ export async function convertCypressProject(
   }
 
   updateJson(tree, 'package.json', (json) => {
-    json.devDependencies['cypress'] = TMP_CYPRESS_VERSION;
+    json.devDependencies['cypress'] = cypressVersion;
     return json;
   });
 

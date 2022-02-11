@@ -18,7 +18,9 @@ export interface CreateComponentSpecFileSchema {
   js?: boolean;
   cypressProject?: string;
 }
-
+// TODO(caleb): should we rename this to mention that it's story book?
+//  should we make one for cypress component tests?
+//  should it be here or cypress?
 export function componentCypressGenerator(
   host: Tree,
   schema: CreateComponentSpecFileSchema
