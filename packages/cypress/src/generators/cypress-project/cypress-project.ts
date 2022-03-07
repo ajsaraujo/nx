@@ -34,19 +34,33 @@ export interface CypressProjectSchema extends Schema {
 }
 
 function createFiles(tree: Tree, options: CypressProjectSchema) {
-  generateFiles(tree, join(__dirname, './files'), options.projectRoot, {
-    tmpl: '',
-    ...options,
-    project: options.project || 'Project',
-    ext: options.js ? 'js' : 'ts',
-    offsetFromRoot: offsetFromRoot(options.projectRoot),
-    rootTsConfigPath: getRelativePathToRootTsConfig(tree, options.projectRoot),
-  });
-
+  // get cypress version
+  // if not installed or >v10 use v10 folder
+  // else use v9 folder
   const cypressVersion = installedCypressVersion();
+  const cypressFiles = cypressVersion < 10 ? 'v9-and-under' : 'v10-and-after';
+
+  generateFiles(
+    tree,
+    join(__dirname, './files', cypressFiles),
+    options.projectRoot,
+    {
+      tmpl: '',
+      ...options,
+      project: options.project || 'Project',
+      ext: options.js ? 'js' : 'ts',
+      offsetFromRoot: offsetFromRoot(options.projectRoot),
+      rootTsConfigPath: getRelativePathToRootTsConfig(
+        tree,
+        options.projectRoot
+      ),
+    }
+  );
+
   if (!cypressVersion || cypressVersion >= 7) {
     tree.delete(join(options.projectRoot, 'src/plugins/index.js'));
   } else {
+    // this will always be cypress v7 or lower
     updateJson(tree, join(options.projectRoot, 'cypress.json'), (json) => {
       json.pluginsFile = './src/plugins/index';
       return json;
@@ -60,6 +74,12 @@ function createFiles(tree: Tree, options: CypressProjectSchema) {
 
 function addProject(tree: Tree, options: CypressProjectSchema) {
   let e2eProjectConfig: ProjectConfiguration;
+
+  const detectedCypressVersion = installedCypressVersion() ?? cypressVersion;
+
+  const cypressConfig =
+    detectedCypressVersion < 10 ? 'cypress.json' : 'cypress.config.ts';
+
   if (options.baseUrl) {
     e2eProjectConfig = {
       root: options.projectRoot,
@@ -71,9 +91,10 @@ function addProject(tree: Tree, options: CypressProjectSchema) {
           options: {
             cypressConfig: joinPathFragments(
               options.projectRoot,
-              'cypress.json'
+              cypressConfig
             ),
             baseUrl: options.baseUrl,
+            testingType: 'e2e',
           },
         },
       },
@@ -96,9 +117,10 @@ function addProject(tree: Tree, options: CypressProjectSchema) {
           options: {
             cypressConfig: joinPathFragments(
               options.projectRoot,
-              'cypress.json'
+              cypressConfig
             ),
             devServerTarget,
+            testingType: 'e2e',
           },
           configurations: {
             production: {
@@ -114,7 +136,6 @@ function addProject(tree: Tree, options: CypressProjectSchema) {
     throw new Error(`Either project or baseUrl should be specified.`);
   }
 
-  const detectedCypressVersion = installedCypressVersion() ?? cypressVersion;
   if (detectedCypressVersion < 7) {
     e2eProjectConfig.targets.e2e.options.tsConfig = joinPathFragments(
       options.projectRoot,
